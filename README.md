@@ -1,7 +1,9 @@
-# Release Assistant
+# Artifacts Assistant
 
-This is a pocket app that maintains a CHANGELOG.md file and a `dist` folder
-containing binary artifacts that should be versioned.
+This is a pocket app that maintains a `CHANGELOG.md` file and a `dist` folder
+containing versioned binary artifacts.
+
+The Artifacts Assistant depends on Python 3.
 
 Before running it, install the required dependencies with:
 
@@ -17,6 +19,18 @@ Point your browser to http://127.0.0.1:5757/ and enjoy!
 P.S.: You may want to configure some settings in the `assistant.py` script,
 such as the URL of your bugtracking system (see the variable
 `BUGTRACKING_URL`).
+
+
+## Why an Assistant?
+
+The idea is to ease using Git as a (small) binary artifacts repository.
+Experienced users may not be interested in this interface, as the command line
+may be more than enough. On the other hand, those who aren't used to Git may
+want to use it to ease performing the several steps involved in maintaining a
+tiny artifacts (binary) repository.
+
+Those willing to adopt the idea for automating their publishing process may
+extend/change this code in order to add their own processes.
 
 
 ## Working with branches
