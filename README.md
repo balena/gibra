@@ -1,7 +1,7 @@
 # Artifacts Assistant
 
-This is a pocket app that maintains a `CHANGELOG.md` file and a `dist` folder
-containing versioned binary artifacts.
+This is a pocket app that maintains a binary artifacts repository using a
+`dist` folder, and annotating the changelog in Git tag comments.
 
 The Artifacts Assistant depends on Python 3.
 
@@ -10,15 +10,15 @@ Before running it, install the required dependencies with:
     $ ./assistant.py reqs > requirements.txt
     $ pip3 install --user -r requirements.txt
 
-Then run:
+Add the `assistant.py` script to an empty Git repository to start, then run:
 
     $ ./assistant.py
 
-Point your browser to http://127.0.0.1:5757/ and enjoy!
+You may want to configure the `BUGTRACKING_URL` in the `assistant.py` script,
+such as the URL of your bugtracking system, so it will add links to it whenever
+you write `#NNNN` in the changelog.
 
-P.S.: You may want to configure some settings in the `assistant.py` script,
-such as the URL of your bugtracking system (see the variable
-`BUGTRACKING_URL`).
+Finally, point your browser to http://127.0.0.1:5757/ and enjoy!
 
 
 ## Why an Assistant?
@@ -35,31 +35,19 @@ extend/change this code in order to add their own processes.
 
 ## Working with branches
 
-Put `assistant.py` on your project and create a file named `.branches.py`
-containing a Python-like set with the branches used to store artifacts.
+Just synchronize remote branches locally, like so:
 
-For example:
+    $ git checkout --track origin/branch_name
 
-    {
-      'branchA',
-      'branchB'
-    }
+Then it will show in a selector in the top of the assistant.
 
-You may have other branches in the repository, but only these two will be
-handled by the `assistant.py`.
-
-When handling multiple branches, don't forget to replicate the `assistant.py`
-script.
+When handling multiple branches, don't forget to replicate the same
+`assistant.py` script on them.
 
 
-## The CHANGELOG.md file
+## Modifying the changelog
 
-You may edit the file manually for fixing past log entries. In this case,
-please follow the format below:
-
-    ## [version] - [date]
-    [comments]
-
-Avoid to use headings in the `[comments]` as they may conflict with the version
-headers. Stick to normal paragraphs, lists, etc.
+Well, you cannot easily change git comments, but you can add `git notes`. The
+`assistant.py` will consider whatever you write on the tag notes as updates to
+the changelog entry.
 
