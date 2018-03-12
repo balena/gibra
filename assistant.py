@@ -7,6 +7,7 @@ import re
 import tempfile
 import uuid
 import shutil
+import time
 
 from flask import Flask, render_template_string, request, flash, redirect, url_for, session
 from flaskext.markdown import Markdown, Extension
@@ -14,7 +15,6 @@ from werkzeug.utils import secure_filename
 from zipfile import ZipFile
 
 from git import Repo
-from time import time
 
 import markdown
 from markdown.inlinepatterns import Pattern
@@ -26,6 +26,7 @@ BUGTRACKING_URL = 'https://github.com/balena/artifacts/issues/'
 
 app = Flask(__name__)
 app.secret_key = str(uuid.uuid4())
+app.jinja_env.filters['datetime'] = lambda x: time.asctime(x)
 md = Markdown(app)
 repo = Repo('.')
 
@@ -78,7 +79,7 @@ index_html = """
         </section>
       </nav>
 
-      {%- if len(branches) > 1 %}
+      {%- if branches|length > 1 %}
       <section class="container" id="change-branch">
         <h5 class="title">Branch</h5>
         <p><strong>Current branch</strong>: {{current_branch}}</p>
@@ -161,7 +162,10 @@ index_html = """
         <h3 class="title">Changelog</h3>
         {%- if changelog %}
         {%- for c in changelog %}
-        <h4><strong>{{ c['version'] }}</strong> &mdash; {{ c['date'] }}</h4>
+        <div class="row">
+          <div class="column"><h4><strong>{{ c['version'] }}</strong></h4></div>
+          <div class="column"><small class="float-right" style="margin-top: 0.5em;">{{ c['date']|datetime }}</small></div>
+        </div>
         {{ '\n'.join(c['description'])|markdown }}
         {%- endfor %}
         {%- else %}
@@ -201,7 +205,7 @@ def read_changelog():
         'date': time.gmtime(tagref.commit.committed_date),
         'description': description,
     })
-  return changelog
+  return sorted(changelog, key=lambda x: x['date'], reverse=True)
 
 def unzip(filename):
   shutil.rmtree('dist', ignore_errors=True)
