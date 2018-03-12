@@ -2,12 +2,8 @@
 # -*- coding: utf-8 -*-
 
 import sys
-import ast
-import codecs
 import os
-import pytz
 import re
-import subprocess
 import tempfile
 import uuid
 import shutil
@@ -16,10 +12,9 @@ from flask import Flask, render_template_string, request, flash, redirect, url_f
 from flaskext.markdown import Markdown, Extension
 from werkzeug.utils import secure_filename
 from zipfile import ZipFile
-from dateutil.tz import tzlocal
 
-from pprint import pprint
-from datetime import datetime
+from git import Repo
+from time import time
 
 import markdown
 from markdown.inlinepatterns import Pattern
@@ -27,13 +22,12 @@ from markdown.inlinepatterns import Pattern
 __version__ = "1.0.0"
 
 ALLOWED_EXTENSIONS = set(['zip'])
-CHANGELOG_FILE = 'CHANGELOG.md'
-BRANCHES_FILE = '.branches.py'
 BUGTRACKING_URL = 'https://github.com/balena/artifacts/issues/'
 
 app = Flask(__name__)
 app.secret_key = str(uuid.uuid4())
 md = Markdown(app)
+repo = Repo('.')
 
 class TicketsPattern(Pattern):
 
@@ -84,7 +78,7 @@ index_html = """
         </section>
       </nav>
 
-      {%- if branches %}
+      {%- if len(branches) > 1 %}
       <section class="container" id="change-branch">
         <h5 class="title">Branch</h5>
         <p><strong>Current branch</strong>: {{current_branch}}</p>
@@ -189,49 +183,25 @@ def allowed_file(filename):
          filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
 
 def load_branches():
-  if os.path.exists(BRANCHES_FILE):
-    with open(BRANCHES_FILE, 'r') as f:
-      return ast.literal_eval(f.read())
-  return []
+  return [x.name for x in repo.branches]
 
 def read_changelog():
   changelog = []
-  if os.path.exists(CHANGELOG_FILE):
-    with codecs.open(CHANGELOG_FILE, 'r', 'utf-8') as f:
-      state = 'preamble'
-      for line in f.readlines():
-        if state == 'preamble':
-          if line.startswith('## '):
-            state = 'version_date'
-          else:
-            continue
-        if state == 'body':
-          if line.startswith('## '):
-            state = 'version_date'
-          else:
-            changelog[-1].setdefault('description',[]).append(line.rstrip())
-            continue
-        if state == 'version_date':
-          m = re.match(r'^## ([^ ]+) - (.*)$', line)
-          changelog.append({'version': m.group(1), 'date': m.group(2).strip()})
-          state = 'body'
+  for tagref in repo.tags:
+    result = repo.git.show('-s', tagref.commit)
+    m = re.match(r"^.*\nNotes:\n(.*)$", result, flags=re.DOTALL)
+    if m:
+      message = m.group(1)
+      description = [x[4:].rstrip() for x in message.rstrip().split('\n')]
+    else:
+      message = tagref.commit.message
+      description = [x.rstrip() for x in message.rstrip().split('\n')]
+    changelog.append({
+        'version': tagref.name,
+        'date': time.gmtime(tagref.commit.committed_date),
+        'description': description,
+    })
   return changelog
-
-def save_changelog(changelog):
-  lines = []
-  for c in changelog:
-    pprint(c)
-    lines.append(u'## {} - {}'.format(c['version'], c['date']))
-    description = [line.strip() for line in c['description']]
-    while description and description[0] == '':
-      del description[0]
-    while description and description[-1] == '':
-      del description[-1]
-    lines.extend(description)
-    lines.append('')
-
-  with codecs.open(CHANGELOG_FILE, 'w') as f:
-    f.write(u'\n'.join(lines))
 
 def unzip(filename):
   shutil.rmtree('dist', ignore_errors=True)
@@ -240,13 +210,8 @@ def unzip(filename):
     zf.extractall('dist')
 
 def get_entry():
-  new_entry = {
-    'version': request.form.get('version'),
-    'date': datetime.now(tzlocal()).strftime('%Y-%m-%d %H:%M:%S %z'),
-    'description': [request.form.get('description').replace('\r', '')],
-  }
-  result = False
-  package = None
+  version = request.form.get('version'),
+  description = request.form.get('description').replace('\r', ''),
   if 'package' not in request.files:
     flash('No file part', 'error')
   else:
@@ -256,41 +221,37 @@ def get_entry():
     elif package and not allowed_file(package.filename):
       flash('Please add a .zip file', 'error')
     else:
-      output = subprocess.check_output(['git', 'tag']).decode('utf-8')
-      tags = [x.strip() for x in output.split('\n')]
+      tags = [x.name for x in repo.tags]
       if new_entry['version'] in tags:
         flash('Version {} already exists'.format(new_entry['version']), 'error')
       else:
-        result = True
-  return (result, new_entry, package)
+        return version, description, package
+  return None
 
 def get_current_branch():
-  output = subprocess.check_output(['git', 'branch']).decode('utf-8')
-  selected = [line.split()[1] for line in output.split('\n') if line.startswith('*')]
-  return selected[0]
+  return repo.active_branch.name
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
   new_entry = {}
   if request.method == 'POST':
-    result, new_entry, package = get_entry()
+    result = get_entry()
     if result:
+      version, description, package = result
+
       filename = secure_filename(package.filename)
       uploaded_file = os.path.join(tempfile.gettempdir(), filename)
       package.save(uploaded_file)
       unzip(uploaded_file)
 
-      subprocess.check_call(['git', 'fetch', '--all'])
-
-      changelog = read_changelog()
-      save_changelog([new_entry] + changelog)
-
-      subprocess.check_call(['git', 'add', '*'])
-      subprocess.check_call(['git', 'commit', '-m', 'Bump to version {}'.format(new_entry['version'])])
-      subprocess.check_call(['git', 'push'])
-
-      subprocess.check_call(['git', 'tag', new_entry['version']])
-      subprocess.check_call(['git', 'push', '--tags'])
+      repo.remotes.origin.pull()
+      repo.git.pull('--tags', '-f')
+      index = repo.index
+      index.add(['dist'])
+      index.commit(new_entry['description'])
+      repo.remotes.origin.push()
+      new_tag = repo.create_tag(version)
+      repo.remotes.origin.push(new_tag)
 
       return redirect(request.url)
 
@@ -304,20 +265,20 @@ def index():
 @app.route('/branches', methods=['POST'])
 def change_branch():
   branch = request.form.get('branch')
-  subprocess.check_call(['git', 'fetch', '--all'])
-  subprocess.check_call(['git', 'pull', '--tags'])
-  subprocess.check_call(['git', 'checkout', branch])
+  repo.git.fetch('--all')
+  repo.git.pull('--tags')
+  repo.git.checkout(branch)
   return redirect(url_for('.index'))
 
 if __name__ == "__main__":
   if len(sys.argv) == 2 and sys.argv[1] == 'reqs':
     requirements = [
-        'pytz>=2017.2',
         'Flask>=0.12.2',
         'Werkzeug>=0.14.1',
         'Flask-Markdown>=0.3',
-        'python-dateutil>=2.6.1',
+        'GitPython>=2.1.8',
     ]
     print('\n'.join(requirements))
   else:
     app.run(debug=True, port=5757)
+
