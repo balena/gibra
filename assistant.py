@@ -19,7 +19,7 @@ from git import Repo
 import markdown
 from markdown.inlinepatterns import Pattern
 
-__version__ = "1.0.0"
+__version__ = "1.0.2"
 
 ALLOWED_EXTENSIONS = set(['zip'])
 BUGTRACKING_URL = 'https://github.com/balena/artifacts/issues/'
@@ -142,7 +142,7 @@ index_html = """
                     format below.
                   </small>
                   <textarea placeholder="Enter or paste your release notes here…"
-                            name="description" id="release-notes">{{''.join(description)|safe}}</textarea>
+                            name="description" id="release-notes">{{description|safe}}</textarea>
                 </div>
               </div>
               <div class="row">
@@ -202,7 +202,7 @@ def read_changelog():
       description = [x.rstrip() for x in message.rstrip().split('\n')]
     changelog.append({
         'version': tagref.name,
-        'date': time.gmtime(tagref.commit.committed_date),
+        'date': time.localtime(tagref.commit.committed_date),
         'description': description,
     })
   return sorted(changelog, key=lambda x: x['date'], reverse=True)
@@ -214,35 +214,34 @@ def unzip(filename):
     zf.extractall('dist')
 
 def get_entry():
-  version = request.form.get('version'),
-  description = request.form.get('description').replace('\r', ''),
-  if 'package' not in request.files:
+  version = request.form.get('version')
+  description = request.form.get('description').replace('\r', '')
+  tags = [x.name for x in repo.tags]
+  if version in tags:
+    flash('Version {} already exists'.format(version), 'error')
+  elif 'package' not in request.files:
     flash('No file part', 'error')
   else:
     package = request.files['package']
     if package.filename == '':
       flash('No selected file', 'error')
-    elif package and not allowed_file(package.filename):
+    elif not allowed_file(package.filename):
       flash('Please add a .zip file', 'error')
     else:
-      tags = [x.name for x in repo.tags]
-      if new_entry['version'] in tags:
-        flash('Version {} already exists'.format(new_entry['version']), 'error')
-      else:
-        return version, description, package
-  return None
+      return version, description, package
+  return version, description, None
 
 def get_current_branch():
   return repo.active_branch.name
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-  new_entry = {}
-  if request.method == 'POST':
-    result = get_entry()
-    if result:
-      version, description, package = result
+  version = ''
+  description = ''
 
+  if request.method == 'POST':
+    version, description, package = get_entry()
+    if package:
       filename = secure_filename(package.filename)
       uploaded_file = os.path.join(tempfile.gettempdir(), filename)
       package.save(uploaded_file)
@@ -252,7 +251,7 @@ def index():
       repo.git.pull('--tags', '-f')
       index = repo.index
       index.add(['dist'])
-      index.commit(new_entry['description'])
+      index.commit(description)
       repo.remotes.origin.push()
       new_tag = repo.create_tag(version)
       repo.remotes.origin.push(new_tag)
@@ -264,7 +263,8 @@ def index():
           branches=load_branches(),
           changelog=read_changelog(),
           __version__=__version__,
-          **new_entry)
+          version=version,
+          description=description)
 
 @app.route('/branches', methods=['POST'])
 def change_branch():
