@@ -1,9 +1,9 @@
-# Artifacts Assistant
+# Git Binary Repository Assistant
 
 This is a pocket app that maintains a binary artifacts repository using a
 `dist` folder, and annotating the changelog in Git tag comments.
 
-The Artifacts Assistant depends on Python 3.
+The Assistant depends on Python 3.
 
 Before running it, install the required dependencies with:
 
