@@ -30,259 +30,272 @@ app.jinja_env.filters['datetime'] = lambda x: time.asctime(x)
 md = Markdown(app)
 repo = Repo('.')
 
+
 class TicketsPattern(Pattern):
 
-  def handleMatch(self, m):
-    ticket_number = m.group(2)
-    text = '#' + ticket_number
-    url = BUGTRACKING_URL + ticket_number
-    el = markdown.util.etree.Element("a")
-    el.set('href', url)
-    el.text = markdown.util.AtomicString(text)
-    return el
+    def handleMatch(self, m):
+        ticket_number = m.group(2)
+        text = '#' + ticket_number
+        url = BUGTRACKING_URL + ticket_number
+        el = markdown.util.etree.Element("a")
+        el.set('href', url)
+        el.text = markdown.util.AtomicString(text)
+        return el
+
 
 @md.extend()
 class TicketsExtension(Extension):
 
-  def extendMarkdown(self, md, md_globals):
-    md.inlinePatterns['tickets'] = TicketsPattern(r'#([0-9]{2,4})')
+    def extendMarkdown(self, md, md_globals):
+        md.inlinePatterns['tickets'] = TicketsPattern(r'#([0-9]{2,4})')
+
 
 index_html = """
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="utf-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1">
-    <meta name="author" content="Guilherme Balena Versiani">
-    <meta name="description" content="Artifacts assistant provides a minimal interface of a binary repository manager using Git.">
-    <title>Release Assistant</title>
-    <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.css">
-    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.3.0/milligram.min.css">
-    <link rel="stylesheet" href="https://milligram.github.io/styles/main.css">
-  </head>
-  <body>
-    <main class="wrapper">
-      <nav class="navigation">
-        <section class="container">
-          <span class="navigation-title">
-            <svg class="img" version="1.1" viewBox="0 0 50 50">
-              <polyline points="30 14 30 10 35 10 35 6 21 6 21 10 26 10 26 14" fill="none" stroke="#000" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2"/>
-              <polyline points="9 27 5 27 5 21 1 21 1 37 5 37 5 31 9 31" fill="none" stroke="#000" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2"/>
-              <path d="M45,20v5h-3v-8.157C42,15.826,41.189,15,40.191,15H19.99c-0.479,0-0.941,0.195-1.28,0.542L14,21h-3c-1,0-2,1-2,2v12 c0,1.018,1.002,2,2,2h3l4.712,5.461C19.051,42.806,19.511,43,19.99,43h12.855c0.479,0,0.939-0.194,1.278-0.539l7.346-7.482 c0.341-0.346,0.53-0.814,0.53-1.303V31h3v5h4V20H45z" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2.0077"/>
-              <polygon points="32 28 24 39 27 30 22 30 27 20 32 20 27 28"/>
-            </svg>
-            &nbsp;
-            <h1 class="title">Artifacts Assistant</h1>
-            <span class="float-right">version {{__version__}}</span>
-          </span>
-        </section>
-      </nav>
+    <head>
+        <meta charset="utf-8">
+        <meta name="viewport" content="width=device-width, initial-scale=1">
+        <meta name="author" content="Guilherme Balena Versiani">
+        <meta name="description" content="Artifacts assistant provides a minimal interface of a binary repository manager using Git.">
+        <title>Release Assistant</title>
+        <link rel="stylesheet" href="https://fonts.googleapis.com/css?family=Roboto:300,300italic,700,700italic">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/normalize/3.0.3/normalize.css">
+        <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/milligram/1.3.0/milligram.min.css">
+        <link rel="stylesheet" href="https://milligram.github.io/styles/main.css">
+    </head>
+    <body>
+        <main class="wrapper">
+            <nav class="navigation">
+                <section class="container">
+                    <span class="navigation-title">
+                        <svg class="img" version="1.1" viewBox="0 0 50 50">
+                            <polyline points="30 14 30 10 35 10 35 6 21 6 21 10 26 10 26 14" fill="none" stroke="#000" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2"/>
+                            <polyline points="9 27 5 27 5 21 1 21 1 37 5 37 5 31 9 31" fill="none" stroke="#000" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2"/>
+                            <path d="M45,20v5h-3v-8.157C42,15.826,41.189,15,40.191,15H19.99c-0.479,0-0.941,0.195-1.28,0.542L14,21h-3c-1,0-2,1-2,2v12 c0,1.018,1.002,2,2,2h3l4.712,5.461C19.051,42.806,19.511,43,19.99,43h12.855c0.479,0,0.939-0.194,1.278-0.539l7.346-7.482 c0.341-0.346,0.53-0.814,0.53-1.303V31h3v5h4V20H45z" fill="none" stroke="#000" stroke-linecap="round" stroke-linejoin="round" stroke-miterlimit="10" stroke-width="2.0077"/>
+                            <polygon points="32 28 24 39 27 30 22 30 27 20 32 20 27 28"/>
+                        </svg>
+                        &nbsp;
+                        <h1 class="title">Artifacts Assistant</h1>
+                        <span class="float-right">version {{__version__}}</span>
+                    </span>
+                </section>
+            </nav>
 
-      {%- if branches|length > 1 %}
-      <section class="container" id="change-branch">
-        <h5 class="title">Branch</h5>
-        <p><strong>Current branch</strong>: {{current_branch}}</p>
-        <p>
-          <form method="POST" action="{{url_for('.change_branch')}}">
-            <div class="row">
-              <div class="column column-75">
-                <select name="branch" id="branch">
-                  {%- for branch in branches|sort %}
-                  <option value="{{branch}}"{{' selected' if branch == current_branch else ''}}>{{branch}}</option>
-                  {%- endfor %}
-                </select>
-              </div>
-              <div class="column column-25">
-                <input class="button-primary" type="submit" value="Change" onclick="document.getElementById('branch-progress').style.display='block'">
-              </div>
-            </div>
-            <div class="row">
-              <div class="column">
-                <progress id="branch-progress" style="display: none;"><small>In progress…</small></progress>
-              </div>
-            </div>
-          </form>
-        </p>
-      </section>
-      {%- endif %}
+            {%- if branches|length > 1 %}
+            <section class="container" id="change-branch">
+                <h5 class="title">Branch</h5>
+                <p><strong>Current branch</strong>: {{current_branch}}</p>
+                <p>
+                    <form method="POST" action="{{url_for('.change_branch')}}">
+                        <div class="row">
+                            <div class="column column-75">
+                                <select name="branch" id="branch">
+                                    {%- for branch in branches|sort %}
+                                    <option value="{{branch}}"{{' selected' if branch == current_branch else ''}}>{{branch}}</option>
+                                    {%- endfor %}
+                                </select>
+                            </div>
+                            <div class="column column-25">
+                                <input class="button-primary" type="submit" value="Change" onclick="document.getElementById('branch-progress').style.display='block'">
+                            </div>
+                        </div>
+                        <div class="row">
+                            <div class="column">
+                                <progress id="branch-progress" style="display: none;"><small>In progress…</small></progress>
+                            </div>
+                        </div>
+                    </form>
+                </p>
+            </section>
+            {%- endif %}
 
-      {%- if not branches or current_branch in branches %}
-      <section class="container" id="new-release">
-        <h5 class="title">New release</h5>
-        {%- with messages = get_flashed_messages(with_categories=True) %}
-        {%- if messages %}
-        <blockquote style="color: #9b4dca;">
-          <p><em>
-            {%- for cat, msg in messages %}
-            <strong>{{ cat }}</strong>: {{ msg }}
-            {%- endfor %}
-          </em></p>
-        </blockquote>
-        {%- endif %}
-        {%- endwith %}
-        <p>
-          <form method="POST" action="{{url_for('.index')}}" enctype="multipart/form-data">
-            <fieldset>
-              <div class="row">
-                <div class="column column-33">
-                  <label for="release-version">Version</label>
-                  <input type="text" name="version" id="release-version" value="{{version}}">
+            {%- if not branches or current_branch in branches %}
+            <section class="container" id="new-release">
+                <h5 class="title">New release</h5>
+                {%- with messages = get_flashed_messages(with_categories=True) %}
+                {%- if messages %}
+                <blockquote style="color: #9b4dca;">
+                    <p><em>
+                        {%- for cat, msg in messages %}
+                        <strong>{{ cat }}</strong>: {{ msg }}
+                        {%- endfor %}
+                    </em></p>
+                </blockquote>
+                {%- endif %}
+                {%- endwith %}
+                <p>
+                    <form method="POST" action="{{url_for('.index')}}" enctype="multipart/form-data">
+                        <fieldset>
+                            <div class="row">
+                                <div class="column column-33">
+                                    <label for="release-version">Version</label>
+                                    <input type="text" name="version" id="release-version" value="{{version}}">
+                                </div>
+                                <div class="column">
+                                    <label for="package">Add a file</label>
+                                    <input type="file" name="package" id="package">
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="column">
+                                    <label for="release-notes">What's new in this release?</label>
+                                    <small>
+                                        Use the <a href="https://daringfireball.net/projects/markdown/syntax">Markdown</a>
+                                        format below.
+                                    </small>
+                                    <textarea placeholder="Enter or paste your release notes here…"
+                                                        name="description" id="release-notes">{{description|safe}}</textarea>
+                                </div>
+                            </div>
+                            <div class="row">
+                                <div class="column column-20">
+                                    <input class="button-primary" type="submit" value="Create" onclick="document.getElementById('release-progress').style.display='block'">
+                                </div>
+                                <div class="column column-80">
+                                    <progress id="release-progress" style="margin-top: .5em; display: none;"><small>In progress…</small></progress>
+                                </div>
+                            </div>
+                        </fieldset>
+                    </form>
+                </p>
+            </section>
+
+            <section class="container" id="changelog">
+                <h3 class="title">Changelog</h3>
+                {%- if changelog %}
+                {%- for c in changelog %}
+                <div class="row">
+                    <div class="column"><h4><strong>{{ c['version'] }}</strong></h4></div>
+                    <div class="column"><small class="float-right" style="margin-top: 0.5em;">{{ c['date']|datetime }}</small></div>
                 </div>
-                <div class="column">
-                  <label for="package">Add a file</label>
-                  <input type="file" name="package" id="package">
-                </div>
-              </div>
-              <div class="row">
-                <div class="column">
-                  <label for="release-notes">What's new in this release?</label>
-                  <small>
-                    Use the <a href="https://daringfireball.net/projects/markdown/syntax">Markdown</a>
-                    format below.
-                  </small>
-                  <textarea placeholder="Enter or paste your release notes here…"
-                            name="description" id="release-notes">{{description|safe}}</textarea>
-                </div>
-              </div>
-              <div class="row">
-                <div class="column column-20">
-                  <input class="button-primary" type="submit" value="Create" onclick="document.getElementById('release-progress').style.display='block'">
-                </div>
-                <div class="column column-80">
-                  <progress id="release-progress" style="margin-top: .5em; display: none;"><small>In progress…</small></progress>
-                </div>
-              </div>
-            </fieldset>
-          </form>
-        </p>
-      </section>
+                {{ '\n'.join(c['description'])|markdown }}
+                {%- endfor %}
+                {%- else %}
+                <p><em>Pssst! It's empty...</em></p>
+                {%- endif %}
+            </section>
+            {%- endif %}
 
-      <section class="container" id="changelog">
-        <h3 class="title">Changelog</h3>
-        {%- if changelog %}
-        {%- for c in changelog %}
-        <div class="row">
-          <div class="column"><h4><strong>{{ c['version'] }}</strong></h4></div>
-          <div class="column"><small class="float-right" style="margin-top: 0.5em;">{{ c['date']|datetime }}</small></div>
-        </div>
-        {{ '\n'.join(c['description'])|markdown }}
-        {%- endfor %}
-        {%- else %}
-        <p><em>Pssst! It's empty...</em></p>
-        {%- endif %}
-      </section>
-      {%- endif %}
+        </main>
 
-    </main>
+        <script src="https://milligram.github.io/scripts/main.js"></script>
 
-    <script src="https://milligram.github.io/scripts/main.js"></script>
-
-  </body>
+    </body>
 </html>
 """
 
+
 def allowed_file(filename):
-  return '.' in filename and \
-         filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+    return '.' in filename and \
+           filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
+
 
 def load_branches():
-  return [x.name for x in repo.branches]
+    return [x.name for x in repo.branches]
+
 
 def read_changelog():
-  changelog = []
-  for tagref in repo.tags:
-    result = repo.git.show('-s', tagref.commit)
-    m = re.match(r"^.*\nNotes:\n(.*)$", result, flags=re.DOTALL)
-    if m:
-      message = m.group(1)
-      description = [x[4:].rstrip() for x in message.rstrip().split('\n')]
-    else:
-      message = tagref.commit.message
-      description = [x.rstrip() for x in message.rstrip().split('\n')]
-    changelog.append({
-        'version': tagref.name,
-        'date': time.localtime(tagref.commit.committed_date),
-        'description': description,
-    })
-  return sorted(changelog, key=lambda x: x['date'], reverse=True)
+    changelog = []
+    for tagref in repo.tags:
+        result = repo.git.show('-s', tagref.commit)
+        m = re.match(r"^.*\nNotes:\n(.*)$", result, flags=re.DOTALL)
+        if m:
+            message = m.group(1)
+            description = [x[4:].rstrip()
+                           for x in message.rstrip().split('\n')]
+        else:
+            message = tagref.commit.message
+            description = [x.rstrip() for x in message.rstrip().split('\n')]
+        changelog.append({
+            'version': tagref.name,
+            'date': time.localtime(tagref.commit.committed_date),
+            'description': description,
+        })
+    return sorted(changelog, key=lambda x: x['date'], reverse=True)
+
 
 def unzip(filename):
-  shutil.rmtree('dist', ignore_errors=True)
-  os.mkdir('dist')
-  with ZipFile(filename, 'r') as zf:
-    zf.extractall('dist')
+    shutil.rmtree('dist', ignore_errors=True)
+    os.mkdir('dist')
+    with ZipFile(filename, 'r') as zf:
+        zf.extractall('dist')
+
 
 def get_entry():
-  version = request.form.get('version')
-  description = request.form.get('description').replace('\r', '')
-  tags = [x.name for x in repo.tags]
-  if version in tags:
-    flash('Version {} already exists'.format(version), 'error')
-  elif 'package' not in request.files:
-    flash('No file part', 'error')
-  else:
-    package = request.files['package']
-    if package.filename == '':
-      flash('No selected file', 'error')
-    elif not allowed_file(package.filename):
-      flash('Please add a .zip file', 'error')
+    version = request.form.get('version')
+    description = request.form.get('description').replace('\r', '')
+    tags = [x.name for x in repo.tags]
+    if version in tags:
+        flash('Version {} already exists'.format(version), 'error')
+    elif 'package' not in request.files:
+        flash('No file part', 'error')
     else:
-      return version, description, package
-  return version, description, None
+        package = request.files['package']
+        if package.filename == '':
+            flash('No selected file', 'error')
+        elif not allowed_file(package.filename):
+            flash('Please add a .zip file', 'error')
+        else:
+            return version, description, package
+    return version, description, None
+
 
 def get_current_branch():
-  return repo.active_branch.name
+    return repo.active_branch.name
+
 
 @app.route('/', methods=['GET', 'POST'])
 def index():
-  version = ''
-  description = ''
+    version = ''
+    description = ''
 
-  if request.method == 'POST':
-    version, description, package = get_entry()
-    if package:
-      filename = secure_filename(package.filename)
-      uploaded_file = os.path.join(tempfile.gettempdir(), filename)
-      package.save(uploaded_file)
-      unzip(uploaded_file)
+    if request.method == 'POST':
+        version, description, package = get_entry()
+        if package:
+            filename = secure_filename(package.filename)
+            uploaded_file = os.path.join(tempfile.gettempdir(), filename)
+            package.save(uploaded_file)
+            unzip(uploaded_file)
 
-      repo.remotes.origin.pull()
-      repo.git.pull('--tags', '-f')
-      index = repo.index
-      index.add(['dist'])
-      index.commit(description)
-      repo.remotes.origin.push()
-      new_tag = repo.create_tag(version)
-      repo.remotes.origin.push(new_tag)
+            repo.remotes.origin.pull()
+            repo.git.pull('--tags', '-f')
+            index = repo.index
+            index.add(['dist'])
+            index.commit(description)
+            repo.remotes.origin.push()
+            new_tag = repo.create_tag(version)
+            repo.remotes.origin.push(new_tag)
 
-      return redirect(request.url)
+            return redirect(request.url)
 
-  return render_template_string(index_html,
-          current_branch=get_current_branch(),
-          branches=load_branches(),
-          changelog=read_changelog(),
-          __version__=__version__,
-          version=version,
-          description=description)
+    return render_template_string(
+        index_html,
+        current_branch=get_current_branch(),
+        branches=load_branches(),
+        changelog=read_changelog(),
+        __version__=__version__,
+        version=version,
+        description=description)
+
 
 @app.route('/branches', methods=['POST'])
 def change_branch():
-  branch = request.form.get('branch')
-  repo.git.fetch('--all')
-  repo.git.pull('--tags')
-  repo.git.checkout(branch)
-  return redirect(url_for('.index'))
+    branch = request.form.get('branch')
+    repo.git.fetch('--all')
+    repo.git.pull('--tags')
+    repo.git.checkout(branch)
+    return redirect(url_for('.index'))
+
 
 if __name__ == "__main__":
-  if len(sys.argv) == 2 and sys.argv[1] == 'reqs':
-    requirements = [
-        'Flask>=0.12.2',
-        'Werkzeug>=0.14.1',
-        'Flask-Markdown>=0.3',
-        'GitPython>=2.1.8',
-    ]
-    print('\n'.join(requirements))
-  else:
-    app.run(debug=True, port=5757)
-
+    if len(sys.argv) == 2 and sys.argv[1] == 'reqs':
+        requirements = [
+            'Flask>=0.12.2',
+            'Werkzeug>=0.14.1',
+            'Flask-Markdown>=0.3',
+            'GitPython>=2.1.8',
+        ]
+        print(('\n'.join(requirements)))
+    else:
+        app.run(debug=True, port=5757)
