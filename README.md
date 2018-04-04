@@ -34,18 +34,19 @@ Then add `gibra` script somewhere in your PATH.
 2) Put a `.gibrarc` file to the root of this repository, following the template
 below:
 
-    {
-      # Gibra will attempt to extract ZIP files with the following extensions:
-      'allowed_extensions': ['zip'],
+```python
+{
+  # Gibra will attempt to extract ZIP files with the following extensions:
+  'allowed_extensions': ['zip'],
 
-      # In changelog comments, transform the following pattern in links to your
-      # bugtracking system:
-      'issue_key_pattern': r'#([0-9]{2,})',
+  # In changelog comments, transform the following pattern in links to your
+  # bugtracking system:
+  'issue_key_pattern': r'#([0-9]{2,})',
 
-      # Bugtracking links will have the following prefix:
-      'bugtracking_url': 'https://github.com/balena/artifacts/issues/',
-    }
-
+  # Bugtracking links will have the following prefix:
+  'bugtracking_url': 'https://github.com/balena/artifacts/issues/',
+}
+```
 
 ## Running
 
