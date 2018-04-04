@@ -46,19 +46,27 @@ except:
 
 __version__ = "1.0.3"
 
+__requirements__ = [
+  'Flask>=0.12.2',
+  'Werkzeug>=0.14.1',
+  'Flask-Markdown>=0.3',
+  'GitPython>=2.1.8',
+]
 
-rc_file = os.path.join(os.getcwd(), '.gibrarc')
 
-if not os.path.exists(rc_file):
-  sys.stderr.write('.gibrarc file not found\n')
-  sys.exit(1)
+if __name__ == "__main__":
+  rc_file = os.path.join(os.getcwd(), '.gibrarc')
 
-with open(rc_file, 'r') as f:
-  config = ast.literal_eval(f.read())
+  if not os.path.exists(rc_file):
+    sys.stderr.write('.gibrarc file not found\n')
+    sys.exit(1)
 
-ALLOWED_EXTENSIONS = set(config['allowed_extensions'])
-BUGTRACKING_URL = config['bugtracking_url']
-TICKETS_PATTERN = config.get('issue_key_pattern', r'#([0-9]{2,})')
+  with open(rc_file, 'r') as f:
+    config = ast.literal_eval(f.read())
+
+  ALLOWED_EXTENSIONS = set(config['allowed_extensions'])
+  BUGTRACKING_URL = config['bugtracking_url']
+  TICKETS_PATTERN = config.get('issue_key_pattern', r'#([0-9]{2,})')
 
 
 index_html = """
@@ -196,8 +204,7 @@ index_html = """
 </html>
 """
 
-
-if not missing_dependencies:
+if __name__ == "__main__" and not missing_dependencies:
   app = Flask(__name__)
   app.secret_key = str(uuid.uuid4())
   app.jinja_env.filters['datetime'] = lambda x: time.asctime(x)
@@ -328,13 +335,7 @@ def get_current_branch():
 
 if __name__ == "__main__":
   if len(sys.argv) == 2 and sys.argv[1] == 'reqs':
-    requirements = [
-      'Flask>=0.12.2',
-      'Werkzeug>=0.14.1',
-      'Flask-Markdown>=0.3',
-      'GitPython>=2.1.8',
-    ]
-    print(('\n'.join(requirements)))
+    print(('\n'.join(__requirements__)))
   else:
     if missing_dependencies:
       sys.stderr.write(
