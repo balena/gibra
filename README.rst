@@ -8,7 +8,7 @@ manager that uses Git as file storage for a single project.
 
     .. image:: https://raw.githubusercontent.com/balena/gibra/master/gibra.png
         :alt: Gibra
-        :width: 100%
+        :width: 50%
         :align: center
 
 Overview
