@@ -10,54 +10,55 @@ import shutil
 import time
 import ast
 
-from flask import (
-  Flask, render_template_string, request, flash, redirect, url_for, session
-)
-
-from flaskext.markdown import Markdown, Extension
-from werkzeug.utils import secure_filename
 from zipfile import ZipFile
 
-from git import Repo
 
-import markdown
-from markdown.inlinepatterns import Pattern
+missing_dependencies = []
+
+try:
+  from flask import (
+    Flask, render_template_string, request, flash, redirect, url_for, session
+  )
+except:
+  missing_dependencies.append('Flask')
+
+try:
+  from flaskext.markdown import Markdown, Extension
+except:
+  missing_dependencies.append('Flask-Markdown')
+
+try:
+  from werkzeug.utils import secure_filename
+except:
+  missing_dependencies.append('Werkzeug')
+
+try:
+  from git import Repo
+except:
+  missing_dependencies.append('GitPython')
+
+try:
+  import markdown
+  from markdown.inlinepatterns import Pattern
+except:
+  missing_dependencies.append('Markdown')
 
 
 __version__ = "1.0.3"
 
+
 rc_file = os.path.join(os.getcwd(), '.gibrarc')
+
+if not os.path.exists(rc_file):
+  sys.stderr.write('.gibrarc file not found\n')
+  sys.exit(1)
+
 with open(rc_file, 'r') as f:
   config = ast.literal_eval(f.read())
 
 ALLOWED_EXTENSIONS = set(config['allowed_extensions'])
 BUGTRACKING_URL = config['bugtracking_url']
 TICKETS_PATTERN = config.get('issue_key_pattern', r'#([0-9]{2,})')
-
-app = Flask(__name__)
-app.secret_key = str(uuid.uuid4())
-app.jinja_env.filters['datetime'] = lambda x: time.asctime(x)
-md = Markdown(app)
-repo = Repo('.')
-
-
-class TicketsPattern(Pattern):
-
-  def handleMatch(self, m):
-    ticket_number = m.group(2)
-    text = '#' + ticket_number
-    url = BUGTRACKING_URL + ticket_number
-    el = markdown.util.etree.Element("a")
-    el.set('href', url)
-    el.text = markdown.util.AtomicString(text)
-    return el
-
-
-@md.extend()
-class TicketsExtension(Extension):
-
-  def extendMarkdown(self, md, md_globals):
-    md.inlinePatterns['tickets'] = TicketsPattern(TICKETS_PATTERN)
 
 
 index_html = """
@@ -196,6 +197,76 @@ index_html = """
 """
 
 
+if not missing_dependencies:
+  app = Flask(__name__)
+  app.secret_key = str(uuid.uuid4())
+  app.jinja_env.filters['datetime'] = lambda x: time.asctime(x)
+  md = Markdown(app)
+  repo = Repo('.')
+
+
+  class TicketsPattern(Pattern):
+
+    def handleMatch(self, m):
+      ticket_number = m.group(2)
+      text = '#' + ticket_number
+      url = BUGTRACKING_URL + ticket_number
+      el = markdown.util.etree.Element("a")
+      el.set('href', url)
+      el.text = markdown.util.AtomicString(text)
+      return el
+
+
+  @md.extend()
+  class TicketsExtension(Extension):
+
+    def extendMarkdown(self, md, md_globals):
+      md.inlinePatterns['tickets'] = TicketsPattern(TICKETS_PATTERN)
+
+
+  @app.route('/', methods=['GET', 'POST'])
+  def index():
+    version = ''
+    description = ''
+
+    if request.method == 'POST':
+      version, description, package = get_entry()
+      if package:
+        filename = secure_filename(package.filename)
+        uploaded_file = os.path.join(tempfile.gettempdir(), filename)
+        package.save(uploaded_file)
+        unzip(uploaded_file)
+
+        repo.remotes.origin.pull()
+        repo.git.pull('--tags', '-f')
+        index = repo.index
+        index.add(['dist'])
+        index.commit(description)
+        repo.remotes.origin.push()
+        new_tag = repo.create_tag(version)
+        repo.remotes.origin.push(new_tag)
+
+        return redirect(request.url)
+
+    return render_template_string(
+      index_html,
+      current_branch=get_current_branch(),
+      branches=load_branches(),
+      changelog=read_changelog(),
+      __version__=__version__,
+      version=version,
+      description=description)
+
+
+  @app.route('/branches', methods=['POST'])
+  def change_branch():
+    branch = request.form.get('branch')
+    repo.git.fetch('--all')
+    repo.git.pull('--tags')
+    repo.git.checkout(branch)
+    return redirect(url_for('.index'))
+
+
 def allowed_file(filename):
   return '.' in filename and \
        filename.rsplit('.', 1)[1].lower() in ALLOWED_EXTENSIONS
@@ -255,49 +326,6 @@ def get_current_branch():
   return repo.active_branch.name
 
 
-@app.route('/', methods=['GET', 'POST'])
-def index():
-  version = ''
-  description = ''
-
-  if request.method == 'POST':
-    version, description, package = get_entry()
-    if package:
-      filename = secure_filename(package.filename)
-      uploaded_file = os.path.join(tempfile.gettempdir(), filename)
-      package.save(uploaded_file)
-      unzip(uploaded_file)
-
-      repo.remotes.origin.pull()
-      repo.git.pull('--tags', '-f')
-      index = repo.index
-      index.add(['dist'])
-      index.commit(description)
-      repo.remotes.origin.push()
-      new_tag = repo.create_tag(version)
-      repo.remotes.origin.push(new_tag)
-
-      return redirect(request.url)
-
-  return render_template_string(
-    index_html,
-    current_branch=get_current_branch(),
-    branches=load_branches(),
-    changelog=read_changelog(),
-    __version__=__version__,
-    version=version,
-    description=description)
-
-
-@app.route('/branches', methods=['POST'])
-def change_branch():
-  branch = request.form.get('branch')
-  repo.git.fetch('--all')
-  repo.git.pull('--tags')
-  repo.git.checkout(branch)
-  return redirect(url_for('.index'))
-
-
 if __name__ == "__main__":
   if len(sys.argv) == 2 and sys.argv[1] == 'reqs':
     requirements = [
@@ -308,4 +336,13 @@ if __name__ == "__main__":
     ]
     print(('\n'.join(requirements)))
   else:
-    app.run(debug=True, port=5757)
+    if missing_dependencies:
+      sys.stderr.write(
+        'Missing dependencies: {}\n'.format(', '.join(missing_dependencies)) +
+        '\nInstall the requirements with:\n\n' +
+        '    {} reqs > requirements.txt\n'.format(sys.argv[0]) +
+        '    pip3 install --user -r requirements.txt\n' +
+        '\n'
+      )
+      sys.exit(1)
+    app.run(debug=False, port=5757)
