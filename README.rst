@@ -4,6 +4,13 @@ Gibra
 Gibra (Git Binary Repository Assistant) is a static binary repository
 manager that uses Git as file storage for a single project.
 
+.. class:: no-web
+
+    .. image:: https://raw.githubusercontent.com/balena/gibra/master/gibra.png
+        :alt: Gibra
+        :width: 100%
+        :align: center
+
 Overview
 ========
 
