@@ -1,27 +1,62 @@
-# Git Binary Repository Assistant
+Gibra
+=====
 
-This is a pocket app that maintains a binary artifacts repository using a
-`dist` folder, and annotating the changelog in Git tag comments.
+Gibra (Git Binary Repository Assistant) is a static binary repository manager
+that uses Git as file storage for a single project.
+
+
+# Overview
+
+`gibra` provides a simple way to store static binary files in Git. `gibra` just
+pushes static files into a `dist` folder in a Git repository, and annotates the
+changelog in Git tag comments.
 
 The Assistant depends on Python 3.
 
+
+# Usage
+
+
+## Preparation
+
 Before running it, install the required dependencies with:
 
-    $ ./assistant.py reqs > requirements.txt
+    $ ./gibra reqs > requirements.txt
     $ pip3 install --user -r requirements.txt
 
-Add the `assistant.py` script to an empty Git repository to start, then run:
-
-    $ ./assistant.py
-
-You may want to configure the `BUGTRACKING_URL` in the `assistant.py` script,
-such as the URL of your bugtracking system, so it will add links to it whenever
-you write `#NNNN` in the changelog.
-
-Finally, point your browser to http://127.0.0.1:5757/ and enjoy!
+Then add `gibra` script somewhere in your PATH.
 
 
-## Why an Assistant?
+## Configure
+
+1) Create a Git repository to host your binaries.
+
+2) Put a `.gibrarc` file to the root of this repository, following the template
+below:
+
+    {
+      # Gibra will attempt to extract ZIP files with the following extensions:
+      'allowed_extensions': ['zip'],
+
+      # In changelog comments, transform the following pattern in links to your
+      # bugtracking system:
+      'issue_key_pattern': r'#([0-9]{2,})',
+
+      # Bugtracking links will have the following prefix:
+      'bugtracking_url': 'https://github.com/balena/artifacts/issues/',
+    }
+
+
+## Running
+
+Just move to your root repository folder and do:
+
+    $ gibra
+
+Point your browser to http://127.0.0.1:5757/ and enjoy!
+
+
+# Why an Assistant?
 
 The idea is to ease using Git as a (small) binary artifacts repository.
 Experienced users may not be interested in this interface, as the command line
@@ -33,21 +68,21 @@ Those willing to adopt the idea for automating their publishing process may
 extend/change this code in order to add their own processes.
 
 
-## Working with branches
+# Working with branches
 
 Just synchronize remote branches locally, like so:
 
     $ git checkout --track origin/branch_name
 
-Then it will show in a selector in the top of the assistant.
+Then it will show in a selector in the top of `gibra` interface.
 
-When handling multiple branches, don't forget to replicate the same
-`assistant.py` script on them.
+When handling multiple branches, don't forget to replicate the `.gibrarc`
+config file.
 
 
-## Modifying the changelog
+# Modifying the changelog
 
-Well, you cannot easily change git comments, but you can add `git notes`. The
-`assistant.py` will consider whatever you write on the tag notes as updates to
-the changelog entry.
+Well, you cannot easily change git comments, but you can add `git notes`.
+`gibra` will consider whatever you write on the tag notes as updates to the
+changelog entry.
 
